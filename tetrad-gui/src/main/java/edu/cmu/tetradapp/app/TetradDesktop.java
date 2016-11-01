@@ -24,13 +24,17 @@ package edu.cmu.tetradapp.app;
 import edu.cmu.tetrad.graph.Graph;
 import edu.cmu.tetrad.session.Session;
 import edu.cmu.tetrad.util.*;
+import edu.cmu.tetradapp.app.hpc.ComputingAccountManager;
 import edu.cmu.tetradapp.editor.EditorWindow;
 import edu.cmu.tetradapp.model.SessionWrapper;
 import edu.cmu.tetradapp.model.TetradMetadata;
 import edu.cmu.tetradapp.util.*;
+import edu.pitt.dbmi.tetrad.db.TetradDatabaseApplication;
+import edu.pitt.dbmi.tetrad.db.service.ComputingAccountService;
 
 import javax.swing.*;
 import javax.swing.border.*;
+
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
@@ -84,7 +88,8 @@ public final class TetradDesktop extends JPanel
      */
     private TetradLogArea logArea;
 
-
+    private final ComputingAccountManager computingAccountManager;
+    
     /**
      * Constructs a new desktop.
      */
@@ -107,6 +112,12 @@ public final class TetradDesktop extends JPanel
 
 //        Bug in Swing for 1.7.
 //        System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
+        
+	// HPC account manager
+        final org.hibernate.Session session = TetradDatabaseApplication.getSessionFactory()
+		.openSession();
+	final ComputingAccountService computingAccountService = new ComputingAccountService(session);
+	this.computingAccountManager = new ComputingAccountManager(computingAccountService);
     }
 
     //===========================PUBLIC METHODS============================//
@@ -678,6 +689,10 @@ public final class TetradDesktop extends JPanel
             }
         }
 
+    }
+
+    public ComputingAccountManager getComputingAccountManager() {
+        return computingAccountManager;
     }
 
 

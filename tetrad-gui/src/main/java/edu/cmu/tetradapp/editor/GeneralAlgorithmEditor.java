@@ -45,26 +45,53 @@ import edu.cmu.tetrad.graph.Graph;
 import edu.cmu.tetrad.graph.Node;
 import edu.cmu.tetrad.search.IndependenceTest;
 import edu.cmu.tetrad.util.Parameters;
+import edu.cmu.tetradapp.app.TetradDesktop;
+import edu.cmu.tetradapp.app.hpc.ComputingAccountManager;
 import edu.cmu.tetradapp.knowledge_editor.KnowledgeBoxEditor;
 import edu.cmu.tetradapp.model.GeneralAlgorithmRunner;
 import edu.cmu.tetradapp.model.GraphSelectionWrapper;
 import edu.cmu.tetradapp.model.KnowledgeBoxModel;
+import edu.cmu.tetradapp.util.DesktopControllable;
+import edu.cmu.tetradapp.util.DesktopController;
 import edu.cmu.tetradapp.util.FinalizingEditor;
 import edu.cmu.tetradapp.util.ImageUtils;
 import edu.cmu.tetradapp.util.WatchedProcess;
+import edu.pitt.dbmi.ccd.rest.client.RestHttpsClient;
+import edu.pitt.dbmi.ccd.rest.client.dto.algo.AlgorithmParamRequest;
+import edu.pitt.dbmi.ccd.rest.client.dto.algo.JobInfo;
+import edu.pitt.dbmi.ccd.rest.client.dto.data.DataFile;
+import edu.pitt.dbmi.ccd.rest.client.dto.user.JsonWebToken;
+import edu.pitt.dbmi.ccd.rest.client.service.algo.AbstractAlgorithmRequest;
+import edu.pitt.dbmi.ccd.rest.client.service.data.DataUploadService;
+import edu.pitt.dbmi.ccd.rest.client.service.data.RemoteDataFileService;
+import edu.pitt.dbmi.ccd.rest.client.service.jobqueue.JobQueueService;
+import edu.pitt.dbmi.ccd.rest.client.service.result.ResultService;
+import edu.pitt.dbmi.ccd.rest.client.service.user.UserService;
+import edu.pitt.dbmi.ccd.rest.client.util.JsonUtils;
+import edu.pitt.dbmi.tetrad.db.entity.ComputingAccount;
 
 import javax.help.CSH;
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import org.apache.http.client.ClientProtocolException;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.prefs.Preferences;
 
 /**
  * Edits some algorithm to search for Markov blanket patterns.
@@ -87,6 +114,8 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
     private final Dimension searchButton1Size;
     private Box knowledgePanel;
     private JLabel whatYouChose;
+    
+    private final ComputingAccountManager manager;
 
     //=========================CONSTRUCTORS============================//
 
@@ -376,6 +405,10 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
         });
 
         setAlgorithm();
+        
+	TetradDesktop desktop = (TetradDesktop) DesktopController.getInstance();
+	
+	this.manager = desktop.getComputingAccountManager();
     }
 
     private Box getKnowledgePanel(GeneralAlgorithmRunner runner) {
@@ -466,13 +499,218 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
         new WatchedProcess((Window) getTopLevelAncestor()) {
             @Override
             public void watch() {
-                runner.execute();
-                graphEditor.replace(runner.getGraphs());
-                graphEditor.validate();
-                firePropertyChange("modelChanged", null, null);
-                pane.setSelectedComponent(graphEditor);
+        	int WhereToCompute = 0;
+        	ComputingAccount computingAccount = null;
+        	
+        	AlgName name = (AlgName) algNamesDropdown.getSelectedItem();
+        	switch (name) {
+        	case FGS:
+        	case GFCI:
+        	    computingAccount = showRemoteComputingOptions(name);
+        	    break;
+        	default:    
+        	}
+        	    
+        	if(computingAccount == null){
+        	    runner.execute();
+                    graphEditor.replace(runner.getGraphs());
+                    graphEditor.validate();
+                    firePropertyChange("modelChanged", null, null);
+                    pane.setSelectedComponent(graphEditor);
+        	}else{
+        	    doRemoteCompute(runner, computingAccount);
+        	}
+        	
             }
         };
+    }
+    
+    private ComputingAccount showRemoteComputingOptions(AlgName name) {
+	List<ComputingAccount> computingAccounts = manager.getComputingAccounts();
+	
+	if(computingAccounts == null || computingAccounts.size() == 0){
+	    return null;
+	}
+	
+	String no_answer = "No, thanks";
+	String yes_answer = "Please run it on ";
+	
+	Object[] options = new String[computingAccounts.size()+1];
+	options[0] = no_answer;
+	for(int i=0;i<computingAccounts.size();i++){
+	    String connName = computingAccounts.get(i).getConnectionName();
+	    options[i+1] = yes_answer + connName;
+	}
+	
+	int n = JOptionPane.showOptionDialog(this, 
+			"Would you like to execute a " + name + " search in the cloud?", "A Silly Question",
+			JOptionPane.YES_NO_OPTION,
+			JOptionPane.QUESTION_MESSAGE,
+			null,
+			options,
+			options[0]);
+	if(n==0)return null;
+	return computingAccounts.get(n-1);
+    }
+    
+    private void doRemoteCompute(final GeneralAlgorithmRunner runner, final ComputingAccount computingAccount) {
+	final String username = computingAccount.getUsername(); 
+	final String password = computingAccount.getPassword(); 
+	final String scheme = computingAccount.getScheme(); 
+	final String hostname = computingAccount.getHostname();  
+	final int port = computingAccount.getPort(); 
+
+	try {
+	    RestHttpsClient restClient = new RestHttpsClient(username, password,
+	    	scheme, hostname, port);
+
+	    UserService userService = new UserService(restClient, scheme, hostname, port);
+	    // JWT token is valid for 1 hour
+	    JsonWebToken jsonWebToken = userService.requestJWT();
+	    
+	    DataUploadService dataUploadService = new DataUploadService(restClient,
+	    	4, scheme, hostname, port);
+	    
+	    DataModel dataModel = runner.getDataModel();
+	    
+	    Path file = Paths
+	    	.get(Preferences.userRoot().get("fileSaveLocation", "~"), dataModel.getName());
+	    dataUploadService.startUpload(file, jsonWebToken);
+	    
+	    RemoteDataFileService remoteDataService = new RemoteDataFileService(
+	    	restClient, scheme, hostname, port);
+	    
+	    int progress;
+	    while ((progress = dataUploadService.getUploadJobStatus(file
+	    	.toAbsolutePath().toString())) < 100) {
+	        System.out.println("Upload Progress: " + progress + "%");
+	        Thread.sleep(500);
+	    }
+	    
+	    Set<DataFile> dataFiles = remoteDataService.retrieveDataFileInfo(jsonWebToken);
+	    long id = -1;
+	    for (DataFile dataFile : dataFiles) {
+	        if (dataFile.getName().equalsIgnoreCase(
+	    	    file.getFileName().toString())) {
+        	    	id = dataFile.getId();
+        	    	String variableType = "continuous";
+        	    	if(dataModel.isDiscrete()){
+        	    	    variableType = "discrete";
+        	    	}
+        	    	
+                        String fileDelimiter = Preferences.userRoot().get("loadDataDelimiterPreference", "Tab").toLowerCase();
+        	    	if(!fileDelimiter.equalsIgnoreCase("tab")){
+        	    	    fileDelimiter = "comma";
+        	    	}
+        	    	
+        	    	remoteDataService.summarizeDataFile(id, variableType,
+        	    		fileDelimiter, jsonWebToken);
+	        }
+	    }
+
+	    String algorithmName = AbstractAlgorithmRequest.FGS;
+	    Algorithm algorithm = runner.getAlgorithm();
+	    System.out.println("Algorithm: " + algorithm.getDescription());
+	    AlgName name = (AlgName) algNamesDropdown.getSelectedItem();
+	    switch (name) {
+	    case FGS:
+		algorithmName = AbstractAlgorithmRequest.FGS;
+		if(dataModel.isDiscrete()){
+		    algorithmName = AbstractAlgorithmRequest.FGS_DISCRETE;
+		}
+		break;
+	    case GFCI:
+		algorithmName = AbstractAlgorithmRequest.GFCI;
+		if(dataModel.isDiscrete()){
+		    algorithmName = AbstractAlgorithmRequest.GFCI_DISCRETE;
+		}
+		break;
+	    default:
+		return;
+	    }
+
+	    AlgorithmParamRequest paramRequest = new AlgorithmParamRequest();
+	    paramRequest.setDatasetFileId(id);
+	    
+	    Map<String, Object> DataValidation = new HashMap<>();
+	    DataValidation.put("skipNonzeroVariance", false);
+	    if(dataModel.isContinuous()){
+		DataValidation.put("skipUniqueVarName", false);
+	    }else{
+		DataValidation.put("skipCategoryLimit", false);
+	    }
+	    paramRequest.setDataValidation(DataValidation);
+	    
+	    Map<String, Object> AlgorithmParameters = new HashMap<>();
+	    
+	    Parameters parameters = runner.getParameters();
+	    List<String> parameterNames = runner.getAlgorithm().getParameters();
+	    for(String parameter : parameterNames){
+		Object value = parameters.get(parameter);
+		System.out.println("parameter: " + parameter + "\tvalue: " + value);
+		if(value != null){
+		    AlgorithmParameters.put(parameter, value);
+		}
+	    }
+	    
+	    paramRequest.setAlgorithmParameters(AlgorithmParameters);
+	    
+	    Map<String, Object> JvmOptions = new HashMap<>();
+	    JvmOptions.put("maxHeapSize", 100);
+	    paramRequest.setJvmOptions(JvmOptions);
+	    
+	    JobQueueService jobQueueService = new JobQueueService(
+	    	restClient, scheme, hostname, port);
+	    
+	    // Submit a job
+	    JobInfo jobInfo = jobQueueService.addToRemoteQueue(
+	    	algorithmName, paramRequest, jsonWebToken);
+
+	    JobInfo job;
+	    while((job = jobQueueService.getJobStatus(jobInfo.getId(), jsonWebToken)) != null){
+	        System.out.println("job.getStatus(): " + job.getStatus());
+	        Thread.sleep(5000);
+	    }
+	    
+	    ResultService resultService = new ResultService(restClient, scheme, 
+	    	hostname, port);
+	    
+	    // Download result
+	    Thread.sleep(5000);
+	    //String text = resultService
+	    //	.downloadAlgorithmResultFile(jobInfo.getResultFileName(), jsonWebToken);
+	    String json = resultService
+	    	.downloadAlgorithmResultFile(jobInfo.getResultJsonFileName(), jsonWebToken);
+	    //System.out.println("Result File: " + text);
+	    //System.out.println("Json Result File: " + json);
+	    
+	    Graph graph = JsonUtils.parseJSONObjectToTetradGraph(json);
+	    List<Graph> graphs = new ArrayList<>();
+	    graphs.add(graph);
+	    
+	    runner.getGraphs().add(graph);
+	    graphEditor.replace(graphs);
+            graphEditor.validate();
+            firePropertyChange("modelChanged", null, null);
+            pane.setSelectedComponent(graphEditor);
+	    
+	} catch (ClientProtocolException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	} catch (URISyntaxException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	} catch (IOException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	} catch (InterruptedException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	} catch (Exception e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+
     }
 
     public Algorithm getAlgorithmFromInterface() {
@@ -504,7 +742,6 @@ public class GeneralAlgorithmEditor extends JPanel implements FinalizingEditor {
 
     private Algorithm getAlgorithm(AlgName name, IndependenceWrapper independenceWrapper, ScoreWrapper scoreWrapper) {
         Algorithm algorithm;
-
 
         switch (name) {
             case FGS:

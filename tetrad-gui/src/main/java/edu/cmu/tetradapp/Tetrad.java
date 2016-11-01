@@ -26,11 +26,17 @@ import edu.cmu.tetrad.util.JOptionUtils;
 import edu.cmu.tetrad.util.TetradLogger;
 import edu.cmu.tetrad.util.Version;
 import edu.cmu.tetradapp.app.TetradDesktop;
+import edu.cmu.tetradapp.app.hpc.ComputingAccountManager;
 import edu.cmu.tetradapp.util.DesktopController;
 import edu.cmu.tetradapp.util.ImageUtils;
 import edu.cmu.tetradapp.util.SplashScreen;
+import edu.pitt.dbmi.tetrad.db.TetradDatabaseApplication;
+import edu.pitt.dbmi.tetrad.db.service.ComputingAccountService;
 
 import javax.swing.*;
+
+import org.hibernate.Session;
+
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -73,6 +79,7 @@ public final class Tetrad implements PropertyChangeListener {
     //==============================CONSTRUCTORS===========================//
 
     public Tetrad() {
+	
     }
 
     //==============================PUBLIC METHODS=========================//
@@ -231,6 +238,7 @@ public final class Tetrad implements PropertyChangeListener {
     private TetradDesktop getDesktop() {
         return desktop;
     }
+    
 }
 
 

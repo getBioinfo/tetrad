@@ -94,6 +94,16 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
         </dependency>
+        <dependency>
+        	<groupId>edu.pitt.dbmi</groupId>
+        	<artifactId>tetrad-db</artifactId>
+        	<version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+        	<groupId>edu.pitt.dbmi.ccd</groupId>
+        	<artifactId>causal-tetrad-rest-client</artifactId>
+        	<version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <!--<distributionManagement>-->
@@ -109,6 +119,9 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+		<java.version>1.7</java.version>
     </properties>
 
     <!--<scm>-->
