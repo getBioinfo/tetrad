@@ -114,7 +114,7 @@ class TetradLogArea extends JPanel {
 
         String path = TetradLogger.getInstance().getLatestFilePath();
 
-        JLabel label = new JLabel(path == null ? "Logging to console (select Setup... from Logging menu)" : "  Logging to " + path);
+        JLabel label = new JLabel(path == null ? "Logging to console (select File -> Settings -> Logging menu)" : "  Logging to " + path);
         label.setFont(label.getFont().deriveFont(Font.BOLD, 12f));
         label.setBackground(DisplayNodeUtils.getNodeFillColor());
         label.setForeground(Color.WHITE);

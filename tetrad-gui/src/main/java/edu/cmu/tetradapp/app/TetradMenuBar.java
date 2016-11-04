@@ -22,6 +22,7 @@
 package edu.cmu.tetradapp.app;
 
 import edu.cmu.tetrad.util.TetradLogger;
+import edu.cmu.tetradapp.app.hpc.HpcAccountSettingAction;
 import edu.cmu.tetradapp.util.DesktopController;
 import edu.cmu.tetradapp.util.SessionEditorIndirectRef;
 
@@ -30,6 +31,7 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -41,6 +43,8 @@ import java.net.URL;
  * @author Joseph Ramsey jdramsey@andrew.cmu.edu
  */
 final class TetradMenuBar extends JMenuBar {
+
+    private static final long serialVersionUID = 7002760190357498503L;
 
     /**
      * A reference to the tetrad desktop.
@@ -82,22 +86,6 @@ final class TetradMenuBar extends JMenuBar {
         fileMenu.add(newSession);
         fileMenu.add(loadSession);
         fileMenu.add(closeSession);
-//        fileMenu.addSeparator();
-//        fileMenu.add(templateMenu);
-//
-//        //=======================EXAMPLES MENU=========================//
-//        // Build a LoadTemplateAction for each file name in
-//        // this.exampleFiles.
-//        String[] templateNames = ConstructTemplateAction.getTemplateNames();
-//        for (String templateName : templateNames) {
-//            if ("--separator--".equals(templateName)) {
-//                fileMenu.addSeparator();
-//            } else {
-//                ConstructTemplateAction action =
-//                        new ConstructTemplateAction(templateName);
-//                fileMenu.add(action);
-//            }
-//        }
 
         fileMenu.addSeparator();
         fileMenu.add(saveSession);
@@ -105,7 +93,6 @@ final class TetradMenuBar extends JMenuBar {
         fileMenu.addSeparator();
         fileMenu.add(new SessionVersionAction());
         fileMenu.addSeparator();
-//        fileMenu.add(new SaveScreenshot(desktop, true, "Save Screenshot..."));
 
         final JMenuItem menuItem = new JMenuItem("Save Session Graph Image...");
         menuItem.addActionListener(new ActionListener() {
@@ -118,6 +105,14 @@ final class TetradMenuBar extends JMenuBar {
         });
 
         fileMenu.add(menuItem);
+        fileMenu.addSeparator();
+        
+        JMenu settingsMenu = new JMenu("Settings");
+        JMenuItem loggingSettingMenuItem = new JMenuItem(new SetupLoggingAction());
+        JMenuItem hpcAccountSettingMenuItem = new JMenuItem(new HpcAccountSettingAction());
+        settingsMenu.add(loggingSettingMenuItem);
+        settingsMenu.add(hpcAccountSettingMenuItem);
+        fileMenu.add(settingsMenu);
         fileMenu.addSeparator();
 
         JMenuItem exit = new JMenuItem(new ExitAction());
@@ -218,17 +213,11 @@ final class TetradMenuBar extends JMenuBar {
      */
     private void buildLoggingMenu(JMenu loggingMenu) {
         loggingMenu.removeAll();
-        // check box to turn logging on/off
-//        JMenuItem loggingState = new JMenuItem();
-//        loggingState.setText(TetradLogger.getInstance().isLogging() ? "Turn Logging Off" : "Turn Logging On");
         //check box to set whether logging should be displayed or not
         JMenuItem displayLogging = new JMenuItem();
         displayLogging.setText(desktop.isDisplayLogging() ? "Stop Logging" : "Start Logging");
 
         loggingMenu.add(displayLogging);
-        loggingMenu.add(new SetupLoggingAction());
-//        loggingMenu.add(loggingState);
-
 
         displayLogging.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -241,15 +230,6 @@ final class TetradMenuBar extends JMenuBar {
             }
         });
 
-
-//        loggingState.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                JMenuItem item = (JMenuItem) e.getSource();
-//                String text = item.getText();
-//                TetradLogger.getInstance().setLogging(text.contains("On"));
-//                item.setText(TetradLogger.getInstance().isLogging() ? "Turn Logging Off" : "Turn Logging On");
-//            }
-//        });
     }
 
     //========================= Inner Classes ==========================================//

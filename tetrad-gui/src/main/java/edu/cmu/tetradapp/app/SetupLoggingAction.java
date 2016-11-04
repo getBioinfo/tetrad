@@ -40,10 +40,10 @@ import java.util.prefs.Preferences;
  */
 class SetupLoggingAction extends AbstractAction {
 
-
+    private static final long serialVersionUID = -3792483383186114713L;
 
     public SetupLoggingAction() {
-        super("Setup...");
+        super("Logging");
     }
 
 

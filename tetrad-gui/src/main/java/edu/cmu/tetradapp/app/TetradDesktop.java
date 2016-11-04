@@ -56,6 +56,8 @@ import java.util.prefs.Preferences;
 public final class TetradDesktop extends JPanel
         implements DesktopControllable, PropertyChangeListener {
 
+    private static final long serialVersionUID = 3504746051238060422L;
+
     /**
      * Margin for desktop when unmaximized.
      */
