@@ -29,6 +29,8 @@ import edu.cmu.tetrad.sem.*;
 import edu.cmu.tetrad.util.RandomUtil;
 import edu.cmu.tetrad.util.StatUtils;
 import edu.cmu.tetrad.util.TetradVector;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.ParseException;
@@ -467,6 +469,7 @@ public class TestGeneralizedSem {
         assertEquals(0.59, aSquaredStar, 0.01);
     }
 
+    @Ignore
     @Test
     public void test7() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -544,6 +547,7 @@ public class TestGeneralizedSem {
         assertEquals(0.69, aSquaredStar, 0.01);
     }
 
+    @Ignore
     @Test
     public void test9() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -619,6 +623,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test10() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -693,6 +698,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test11() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -759,6 +765,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test12() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -913,6 +920,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test14() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -983,6 +991,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test15() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -1050,6 +1059,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test16() {
         RandomUtil.getInstance().setSeed(29999483L);
@@ -1130,6 +1140,7 @@ public class TestGeneralizedSem {
         }
     }
 
+    @Ignore
     @Test
     public void test17() {
         RandomUtil.getInstance().setSeed(29999483L);

@@ -34,6 +34,8 @@ import edu.cmu.tetrad.sem.SemIm;
 import edu.cmu.tetrad.sem.SemPm;
 import edu.cmu.tetrad.util.RandomUtil;
 import edu.pitt.csb.mgm.IndTestMultinomialLogisticRegressionWald;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -49,6 +51,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class TestIndTestWaldLR {
 
+    @Ignore
     @Test
     public void testIsIndependent() {
         RandomUtil.getInstance().setSeed(1450705713157L);

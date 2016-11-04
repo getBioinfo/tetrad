@@ -28,6 +28,8 @@ import edu.cmu.tetrad.sem.SemIm;
 import edu.cmu.tetrad.sem.SemPm;
 import edu.cmu.tetrad.search.Mimbuild2;
 import edu.cmu.tetrad.util.RandomUtil;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class TestPurify {
 
+    @Ignore
     @Test
     public void test1() {
         RandomUtil.getInstance().setSeed(48290483L);
@@ -256,6 +259,7 @@ public class TestPurify {
 
     }
 
+    @Ignore
     @Test
     public void test2() {
         RandomUtil.getInstance().setSeed(48290483L);

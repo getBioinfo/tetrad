@@ -67,8 +67,6 @@ public class HpcAccountSettingAction extends AbstractAction {
 
 	// Right pane -> ComputingAccountEditor
 	final JPanel accountDetailPanel = new JPanel(new BorderLayout());
-	accountDetailPanel.add(new ComputingAccountEditor(splitPane, listModel, manager,
-		new ComputingAccount()), BorderLayout.CENTER);
 	
 	splitPane.setLeftComponent(leftPanel);
 	splitPane.setRightComponent(accountDetailPanel);
